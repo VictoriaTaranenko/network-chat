@@ -20,12 +20,19 @@ public class ServerApp {
             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 
             System.out.println(" Клиент подключился ");
+            int msgCounter = 0;
 
-            String msg;
             while (true) {
-                msg = in.readUTF();
+                String msg = in.readUTF();
                 System.out.print(msg);
-                out.writeUTF(msg);
+                if(msg.startsWith("/")) {
+                    if(msg.equals("/stat")) {
+                        out.writeUTF("Messages count: " + msgCounter);
+                        continue;
+                    }
+                }
+                out.writeUTF("ECHO:" + msg);
+                msgCounter++;
 
             }
 
