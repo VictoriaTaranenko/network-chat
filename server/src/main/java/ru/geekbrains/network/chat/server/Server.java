@@ -37,7 +37,17 @@ public class Server {
             clientHandler.sendMessage(message);
         }
     }
-    public boolean isNickBusy(String username) {
+    public void sendPrivateMessage(ClientHandler sender, String receiverUsername, String message) throws IOException {
+        for(ClientHandler c : clients) {
+            if(c.getUsername().equals(receiverUsername)) {
+                c.sendMessage("От: " + sender.getUsername() + " Собщение: " + message);
+                sender.sendMessage(" Пользователю: " + receiverUsername + " Сообщение: " + message);
+                return;
+            }
+        }
+        sender.sendMessage(" Невозможно отправить сообщение пользователю " + receiverUsername + " . Такого пользователя нет в списке");
+    }
+    public boolean isUserOnline(String username) {
         for(ClientHandler clientHandler : clients) {
         if(clientHandler.getUsername().equals(username)) {
             return true;

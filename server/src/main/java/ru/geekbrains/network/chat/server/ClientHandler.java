@@ -29,7 +29,7 @@ public class ClientHandler {
                     String msg = in.readUTF();
                     if(msg.startsWith("/login")) {
                         String usernameFromLogin = msg.split("\\s")[1];
-                        if(server.isNickBusy(usernameFromLogin)) {
+                        if(server.isUserOnline(usernameFromLogin)) {
                             sendMessage("/login_failed Current nickname is already used ");
                             continue;
                         }
@@ -42,8 +42,17 @@ public class ClientHandler {
                 // цикл общения с клиентом
                 while (true) {
                     String msg = in.readUTF();
-                    server.broadcastMessage(username + ": " + msg);
+                    if(msg.startsWith("/")) {
+                        executeCommand(msg);
+                        continue;
+                    }
+                    if(msg.startsWith("/exit")) {
+                        server.broadcastMessage(username + " покинул чат");
+                       break;
+                    }
+                    server.broadcastMessage(username + " : " + msg);
                 }
+
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
@@ -51,6 +60,13 @@ public class ClientHandler {
             }
         }).start();
 
+    }
+    public void executeCommand(String cmd) throws IOException {
+    if(cmd.startsWith("/w ")) {
+        String[] tokens = cmd.split("\\s", 3);
+        server.sendPrivateMessage(this,tokens[1],tokens[2]);
+        return;
+    }
     }
     public void sendMessage(String message) throws IOException {
         out.writeUTF(message);
