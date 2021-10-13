@@ -61,18 +61,25 @@ public class ClientHandler {
         }).start();
 
     }
-    public void executeCommand(String cmd) throws IOException {
+    public void executeCommand(String cmd)  {
     if(cmd.startsWith("/w ")) {
         String[] tokens = cmd.split("\\s", 3);
         server.sendPrivateMessage(this,tokens[1],tokens[2]);
         return;
-    }
-    }
-    public void sendMessage(String message) throws IOException {
-        out.writeUTF(message);
+     }
     }
 
-    public void disconnect() {
+    public void sendMessage(String message) {
+        try{
+            out.writeUTF(message);
+        } catch(IOException e) {
+          disconnect();
+        }
+
+    }
+
+    public void disconnect()  {
+        server.unsubscribe(this);
         if (socket != null) {
             try {
                 socket.close();
