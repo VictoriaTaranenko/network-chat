@@ -7,12 +7,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Server {
-    private int port;
     private List<ClientHandler> clients;
+    private AuthManager authManager;
+
+    public AuthManager getAuthManager() {
+        return authManager;
+    }
 
     public Server (int port) {
-        this.port = port;
         this.clients = new ArrayList<>();
+        this.authManager = new DbAuthManager();
+        authManager.start();
 
         try (ServerSocket serverSocket = new ServerSocket(port)) {
             System.out.println(" Сервер запущен на порту " + port);
@@ -22,10 +27,13 @@ public class Server {
                 System.out.println("Клиент подключился ");
                 new ClientHandler(this,socket);
             }
-        } catch (IOException e) {
+        } catch (IOException  e) {
             e.printStackTrace();
+        } finally {
+            authManager.stop();
         }
     }
+
     public synchronized void subscribe(ClientHandler clientHandler)   {
         clients.add(clientHandler);
         broadcastMessage("Клиент " + clientHandler.getUsername() + " вошел в чат ");
@@ -36,6 +44,8 @@ public class Server {
         clients.remove(clientHandler);
         broadcastMessage("Клиент " + clientHandler.getUsername() + " вышел из чата ");
         broadcastClientsList();
+
+
     }
     public synchronized void broadcastMessage(String message) {
         for(ClientHandler clientHandler : clients) {
