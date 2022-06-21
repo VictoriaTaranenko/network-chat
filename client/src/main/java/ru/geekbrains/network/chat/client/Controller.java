@@ -9,12 +9,14 @@ import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.MessageFormat;
+import java.util.List;
 import java.util.ResourceBundle;
 
 
@@ -35,6 +37,9 @@ public class Controller implements Initializable {
     private DataOutputStream out;
     private String username;
     private static final String SPACE = " ";
+    private static final String PREFIX_HISTORY = "history_";
+    private static final String ROOT_PATH_HISTORY = "E:\\java-courses-practice\\Java write\\network-chat\\history\\";
+    private static final String SUFFIX_TXT = ".txt";
 
 
     public void setUsername(String username) {
@@ -56,6 +61,52 @@ public class Controller implements Initializable {
         }
     }
 
+    private void writeToFile() {
+        String fileName = MessageFormat.format("{0}{1}{2}{3}", ROOT_PATH_HISTORY, PREFIX_HISTORY, username, SUFFIX_TXT);
+        String msg = msgField.getText() + "\n";
+        try (FileOutputStream fos = new FileOutputStream(fileName, true)) {
+            fos.write(msg.getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    private void readList() {
+        Path historyPath = Paths.get("E:\\java-courses-practice\\Java write\\network-chat\\history");
+        String pathToFile = MessageFormat.format("{0}{1}{2}{3}", ROOT_PATH_HISTORY, PREFIX_HISTORY, username, SUFFIX_TXT);
+        if (historyPath.toFile().isDirectory() && historyPath.toFile().exists()) {
+            String fileName = PREFIX_HISTORY + username + SUFFIX_TXT;//history_vik123.txt
+            File[] files = historyPath.toFile().listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    if (file.isFile() && file.getName().equals(fileName)) {
+                        try {
+                            List<String> lines = Files.readAllLines(Paths.get(pathToFile));
+                            StringBuilder sb = new StringBuilder();
+                            if (lines.size() >= 10) {
+                                for (int i = lines.size() - 10; i < lines.size(); i++) {
+                                    sb.append(lines.get(i)).append("\n");
+                                }
+                            } else {
+                                for (String line : lines) {
+                                    sb.append(line).append("\n");
+                                }
+                            }
+                            msgArea.setText(sb.toString());
+
+                        } catch (IOException ioException) {
+                            throw new RuntimeException("error reading history file");
+                        }
+                    }
+                }
+
+            }
+
+
+        }
+    }
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         setUsername(null);
@@ -64,6 +115,7 @@ public class Controller implements Initializable {
     public void login() {
         if (socket == null || socket.isClosed()) {
             connect();
+
         }
         if (loginField.getText().isEmpty() || passwordField.getText().isEmpty()) {
             Alert alert = new Alert(Alert.AlertType.ERROR, "Имя пользователя не может быть пустым", ButtonType.OK);
@@ -124,9 +176,12 @@ public class Controller implements Initializable {
                             username = msg.split(" ")[1];
                             setUsername(username);
                             msgArea.appendText("Вы зашли под ником: " + username + "\n");
+                            readList();
                             break;
                         }
+
                         msgArea.appendText(msg + '\n');
+
                     }
                     // цикл общения
                     while (true) {
@@ -155,6 +210,7 @@ public class Controller implements Initializable {
                             }
                             continue;
                         }
+
                         msgArea.appendText(msg + '\n');
                     }
                 } catch (IOException e) {
@@ -173,6 +229,8 @@ public class Controller implements Initializable {
     public void sendMsg() {
         try {
             out.writeUTF(msgField.getText());
+            writeToFile();
+
             msgField.clear();
             msgField.requestFocus();
         } catch (IOException e) {
